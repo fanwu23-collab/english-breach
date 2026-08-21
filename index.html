@@ -187,42 +187,39 @@
 </div>
 
 <script>
-    // --- APP STATE & MOCK DATA ---
+    // --- APP STATE ---
     let dailyData = {};
     let finalScores = { level2: 0, level3: 0 };
-
-    // This mimics the JSON your Apps Script will generate daily.
-    const mockJson = {
-        "level1_bugs": [
-            {"sentence": "The system was definately breached.", "answer": "definitely"},
-            {"sentence": "We must seperate the drives.", "answer": "separate"},
-            {"sentence": "Before the error has a permenant effect.", "answer": "permanent"}
-        ],
-        "level1_root": {
-            "root": "DICT",
-            "meaning": "To speak or say",
-            "words": [
-                {"definition": "To say before it happens", "answer": "predict"},
-                {"definition": "To speak against or state the opposite", "answer": "contradict"},
-                {"definition": "To command or speak with authority", "answer": "dictate"},
-                {"definition": "A formal spoken judgement or decision", "answer": "verdict"},
-                {"definition": "Words spoken maliciously; a curse", "answer": "malediction"}
-            ]
-        },
-        "level2_weak_sentence": "The author uses dark imagery to show the machine is sad.",
-        "level2_excerpt": "\"The mechanical hound slept but did not sleep, lived but did not live in its gently humming, gently vibrating, softly illuminated kennel back in a dark corner of the firehouse.\" (Ray Bradbury)",
-        "level3_prompt": "Argue whether relying entirely on automated systems degrades human resilience."
-    };
+    
+    // REPLACE THIS WITH YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL
+    const GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 
     // --- INITIALIZATION ---
-    window.onload = () => {
-        // In production, replace the line below with a fetch() call to your Apps Script URL
-        // fetch('YOUR_WEB_APP_URL').then(res => res.json()).then(data => setupUI(data));
+    window.onload = async () => {
+        // Extract the date from the URL (e.g., ?date=2026-08-21)
+        const urlParams = new URLSearchParams(window.location.search);
+        let dateKey = urlParams.get('date');
         
-        setTimeout(() => {
-            dailyData = mockJson;
+        // If no date in URL, default to today's date in local format
+        if (!dateKey) {
+            dateKey = new Date().toISOString().split('T')[0];
+        }
+
+        try {
+            const response = await fetch(`${GAS_WEBHOOK_URL}?date=${dateKey}`);
+            dailyData = await response.json();
+            
+            if (Object.keys(dailyData).length === 0) {
+                document.getElementById('loading').innerHTML = ">> ERROR: No protocol found for this date. Check system logs.";
+                document.getElementById('loading').style.color = "var(--error)";
+                return;
+            }
+            
             setupUI(dailyData);
-        }, 800); // Simulated loading delay
+        } catch (error) {
+            document.getElementById('loading').innerHTML = ">> CONNECTION ERROR. Mainframe offline.";
+            document.getElementById('loading').style.color = "var(--error)";
+        }
     };
 
     function setupUI(data) {
@@ -231,6 +228,7 @@
 
         // Render Bugs
         const bugDiv = document.getElementById('bugContainer');
+        bugDiv.innerHTML = ""; // Clear existing
         data.level1_bugs.forEach((bug, i) => {
             bugDiv.innerHTML += `<div style="margin-bottom: 10px;">
                 <span style="color: #b0c4de;">>> ${bug.sentence}</span><br>
@@ -242,6 +240,7 @@
         document.getElementById('rootWord').innerText = data.level1_root.root;
         document.getElementById('rootMeaning').innerText = data.level1_root.meaning;
         const morphDiv = document.getElementById('morphContainer');
+        morphDiv.innerHTML = ""; // Clear existing
         data.level1_root.words.forEach((word, i) => {
             morphDiv.innerHTML += `<div style="margin-bottom: 10px;">
                 <label>> ${i+1}. ${word.definition}</label>
@@ -260,16 +259,14 @@
         let allCorrect = true;
         let errors = [];
 
-        // Check Bugs
         dailyData.level1_bugs.forEach((bug, i) => {
             const input = document.getElementById(`bug_${i}`).value.toLowerCase().trim();
-            if (input !== bug.answer) { allCorrect = false; errors.push(`Bug ${i+1}`); }
+            if (input !== bug.answer.toLowerCase()) { allCorrect = false; errors.push(`Bug ${i+1}`); }
         });
 
-        // Check Morphology
         dailyData.level1_root.words.forEach((word, i) => {
             const input = document.getElementById(`morph_${i}`).value.toLowerCase().trim();
-            if (input !== word.answer) { allCorrect = false; errors.push(`Morphology ${i+1}`); }
+            if (input !== word.answer.toLowerCase()) { allCorrect = false; errors.push(`Morphology ${i+1}`); }
         });
 
         const fb = document.getElementById('fb1');
@@ -417,7 +414,7 @@
             if (score >= 7) {
                 fb.style.borderColor = "var(--text)";
                 fb.innerHTML += `<br><br><strong style="color:var(--text);">>> PROTOCOL COMPLETE. Progress saved to database. Well done, Analyst.</strong>`;
-                logProgressToDatabase(); // Triggers the webhook
+                logProgressToDatabase(); 
             } else {
                 fb.style.borderColor = "var(--error)";
                 fb.innerHTML += `<br><br><span style="color:var(--error);">>> OVERRIDE FAILED. Score ${score}/10 is below the 7/10 threshold. Adjust your argument and try again.</span>`;
@@ -432,27 +429,28 @@
     }
 
     // --- WEBHOOK PROGRESS LOGGING ---
-    function logProgressToDatabase() {
-        // In production, replace YOUR_WEB_APP_URL with the Google Apps Script Web App URL
-        const webhookUrl = 'YOUR_WEB_APP_URL';
-        
+    async function logProgressToDatabase() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateKey = urlParams.get('date') || new Date().toISOString().split('T')[0];
+
         const payload = {
-            date: new Date().toISOString().split('T')[0],
+            dateKey: dateKey,
             level2_score: finalScores.level2,
             level3_score: finalScores.level3,
             level3_submission: document.getElementById('l3_response').value
         };
 
-        // Suppressing actual fetch to prevent prototype errors, but here is the logic:
-        /*
-        fetch(webhookUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => console.log("Progress logged successfully."));
-        */
-        console.log("Mock Webhook Fired. Payload:", payload);
+        try {
+            await fetch(GAS_WEBHOOK_URL, {
+                method: 'POST',
+                // Using 'text/plain' to avoid triggering a CORS preflight check on Google Apps Script
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            console.log("Progress logged to Google Sheets successfully.");
+        } catch (error) {
+            console.error("Webhook logging failed: ", error);
+        }
     }
 </script>
 
