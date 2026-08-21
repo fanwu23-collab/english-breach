@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Analyst Protocol - Daily Challenge</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --text: #00ff41;
+            --accent: #0a8f28;
+            --panel: #161b22;
+            --error: #ff4444;
+            --warn: #d29922;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        h1, h2, h3 { margin-top: 0; text-transform: uppercase; }
+        .container { display: flex; width: 100%; }
+        
+        /* Terminal UI (Left) */
+        .terminal {
+            flex: 2;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid var(--accent);
+        }
+        .level-card {
+            background: var(--panel);
+            border: 1px solid var(--accent);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        /* Data Manual (Right) */
+        .manual {
+            flex: 1;
+            background: #000;
+            padding: 20px;
+            overflow-y: auto;
+            color: #b0c4de;
+        }
+        .manual h2 { color: #58a6ff; border-bottom: 1px solid #58a6ff; padding-bottom: 5px; }
+        .manual-section { margin-bottom: 20px; background: #1c2128; padding: 15px; border-radius: 5px;}
+        
+        /* Inputs & Buttons */
+        input[type="text"], input[type="password"], textarea {
+            background: #000;
+            color: var(--text);
+            border: 1px solid var(--accent);
+            padding: 8px;
+            font-family: inherit;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        textarea { height: 100px; resize: vertical; }
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+        button:hover:not(:disabled) { background: #00ff41; }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; }
+        
+        /* Utility */
+        .hidden { display: none; }
+        .feedback { margin-top: 10px; padding: 15px; border-left: 3px solid var(--text); background: #000; line-height: 1.5; }
+        .api-config { padding: 15px; background: var(--panel); margin-bottom: 20px; border: 1px dashed var(--accent);}
+        .sys-text { color: #fff; background: #222; padding: 10px; border-left: 3px solid var(--warn); margin-bottom: 15px; font-style: italic;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="terminal">
+        <h1>> System Override: Analyst Protocol</h1>
+        <div class="api-config">
+            <label>Initialize AI Grading Module (Gemini API Key):</label>
+            <input type="password" id="apiKey" placeholder="AI_KEY_XXXXX">
+        </div>
+
+        <div id="loading" style="color: var(--warn);">> Fetching today's protocol...</div>
+
+        <!-- LEVEL 1 -->
+        <div class="level-card hidden" id="level1">
+            <h2>Level 1: Syntax Debug & Morphology</h2>
+            <p><strong>Task 1.1:</strong> Identify and patch the spelling bugs in these system logs.</p>
+            <div id="bugContainer"></div>
+            
+            <hr style="border-color:var(--accent); margin: 20px 0;">
+
+            <p><strong>Task 1.2:</strong> Morphology compilation. Root Module: <strong id="rootWord" style="color: #58a6ff;"></strong> (<span id="rootMeaning"></span>)</p>
+            <p>Manually construct and type the correct word for each definition:</p>
+            <div id="morphContainer"></div>
+            
+            <br><button onclick="checkLevel1()">Execute Level 1</button>
+            <div id="fb1" class="hidden feedback"></div>
+        </div>
+
+        <!-- LEVEL 2 -->
+        <div class="level-card hidden" id="level2">
+            <h2>Level 2: Logic Upgrade</h2>
+            <p><strong>Task 2.1: The Fixer</strong></p>
+            <p>Current Weak Logic:</p>
+            <div class="sys-text" id="weakSentence"></div>
+            <p>Upgrade the logic using high-level analytical verbs. Avoid generic phrasing.</p>
+            <input type="text" id="l2_upgrade" placeholder="Execute upgrade here...">
+            
+            <hr style="border-color:var(--accent); margin: 20px 0;">
+
+            <p><strong>Task 2.2: 3-Sentence Breach</strong></p>
+            <p>Analyze this data fragment:</p>
+            <div class="sys-text" id="literatureExcerpt"></div>
+            <p>Construct exactly 3 sentences to breach the firewall (Claim, Quote Integration, Evaluation). The sentences must flow logically to form a single cohesive point.</p>
+            <input type="text" id="l2_s1" placeholder="Sentence 1: Name technique & identify meaning">
+            <input type="text" id="l2_s2" placeholder="Sentence 2: Integrate a short quote fluently">
+            <input type="text" id="l2_s3" placeholder="Sentence 3: Evaluate how it links back to the central theme">
+            
+            <br><button onclick="gradeLevel2()" id="submitL2">Run AI Logic Check</button>
+            <div id="fb2" class="hidden feedback"></div>
+        </div>
+
+        <!-- LEVEL 3 -->
+        <div class="level-card hidden" id="level3">
+            <h2>Level 3: Protocol Override</h2>
+            <p><strong>Directive:</strong> <span id="debatePrompt" style="color: var(--warn); font-weight: bold;"></span></p>
+            <p>Write a highly structured paragraph defending your stance. (See Manual Section 4 for criteria).</p>
+            <textarea id="l3_response" placeholder="Compile argument here..."></textarea>
+            <br><button onclick="gradeLevel3()" id="submitL3">Run AI Final Evaluation</button>
+            <div id="fb3" class="hidden feedback"></div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: DATA MANUAL -->
+    <div class="manual">
+        <h2>>> DATA MANUAL</h2>
+        
+        <div class="manual-section">
+            <h3 style="color:#fff;">Sec 1: Morphology Construction</h3>
+            <p>Analyze the Root Module provided in Level 1. Combine it with standard prefixes (pre-, con-, de-) or suffixes (-tion, -ate) to build the target words.</p>
+        </div>
+
+        <div class="manual-section">
+            <h3 style="color:#fff;">Sec 2: Analytical Verbs</h3>
+            <p>Basic words create weak arguments. Upgrade them.</p>
+            <p><strong>Instead of "uses" or "shows":</strong></p>
+            <ul>
+                <li><em>Illustrates, underscores, employs, emphasizes, highlights, delineates.</em></li>
+            </ul>
+        </div>
+
+        <div class="manual-section">
+            <h3 style="color:#fff;">Sec 3: The 3-Sentence Structure</h3>
+            <ol>
+                <li><strong>Claim:</strong> Identify the specific technique (e.g., juxtaposition, motif) and its direct meaning.</li>
+                <li><strong>Evidence:</strong> Embed just 2-5 words of the quote into your own sentence seamlessly.</li>
+                <li><strong>Evaluation (The 'So What?'):</strong> Explain how this explicitly links back to the broader theme. Ensure all three sentences connect cohesively.</li>
+            </ol>
+        </div>
+
+        <div class="manual-section">
+            <h3 style="color:#fff;">Sec 4: Evaluation Criteria</h3>
+            <p>The AI will evaluate your responses based on:</p>
+            <ul>
+                <li><strong>Scoring:</strong> You must achieve at least <strong>7/10</strong> to pass a level.</li>
+                <li><strong>Spelling & Grammar:</strong> Strict British/Australian English spelling applies. Form properly structured sentences.</li>
+                <li><strong>Logic:</strong> Are your evaluations purposeful? Are you avoiding phrases like "I think"?</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- APP STATE & MOCK DATA ---
+    let dailyData = {};
+    let finalScores = { level2: 0, level3: 0 };
+
+    // This mimics the JSON your Apps Script will generate daily.
+    const mockJson = {
+        "level1_bugs": [
+            {"sentence": "The system was definately breached.", "answer": "definitely"},
+            {"sentence": "We must seperate the drives.", "answer": "separate"},
+            {"sentence": "Before the error has a permenant effect.", "answer": "permanent"}
+        ],
+        "level1_root": {
+            "root": "DICT",
+            "meaning": "To speak or say",
+            "words": [
+                {"definition": "To say before it happens", "answer": "predict"},
+                {"definition": "To speak against or state the opposite", "answer": "contradict"},
+                {"definition": "To command or speak with authority", "answer": "dictate"},
+                {"definition": "A formal spoken judgement or decision", "answer": "verdict"},
+                {"definition": "Words spoken maliciously; a curse", "answer": "malediction"}
+            ]
+        },
+        "level2_weak_sentence": "The author uses dark imagery to show the machine is sad.",
+        "level2_excerpt": "\"The mechanical hound slept but did not sleep, lived but did not live in its gently humming, gently vibrating, softly illuminated kennel back in a dark corner of the firehouse.\" (Ray Bradbury)",
+        "level3_prompt": "Argue whether relying entirely on automated systems degrades human resilience."
+    };
+
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        // In production, replace the line below with a fetch() call to your Apps Script URL
+        // fetch('YOUR_WEB_APP_URL').then(res => res.json()).then(data => setupUI(data));
+        
+        setTimeout(() => {
+            dailyData = mockJson;
+            setupUI(dailyData);
+        }, 800); // Simulated loading delay
+    };
+
+    function setupUI(data) {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('level1').classList.remove('hidden');
+
+        // Render Bugs
+        const bugDiv = document.getElementById('bugContainer');
+        data.level1_bugs.forEach((bug, i) => {
+            bugDiv.innerHTML += `<div style="margin-bottom: 10px;">
+                <span style="color: #b0c4de;">>> ${bug.sentence}</span><br>
+                <input type="text" id="bug_${i}" data-ans="${bug.answer}" placeholder="Correct spelling...">
+            </div>`;
+        });
+
+        // Render Morphology
+        document.getElementById('rootWord').innerText = data.level1_root.root;
+        document.getElementById('rootMeaning').innerText = data.level1_root.meaning;
+        const morphDiv = document.getElementById('morphContainer');
+        data.level1_root.words.forEach((word, i) => {
+            morphDiv.innerHTML += `<div style="margin-bottom: 10px;">
+                <label>> ${i+1}. ${word.definition}</label>
+                <input type="text" id="morph_${i}" data-ans="${word.answer}" placeholder="Compile word...">
+            </div>`;
+        });
+
+        // Render Levels 2 & 3
+        document.getElementById('weakSentence').innerText = data.level2_weak_sentence;
+        document.getElementById('literatureExcerpt').innerText = data.level2_excerpt;
+        document.getElementById('debatePrompt').innerText = data.level3_prompt;
+    }
+
+    // --- LEVEL 1 VALIDATION ---
+    function checkLevel1() {
+        let allCorrect = true;
+        let errors = [];
+
+        // Check Bugs
+        dailyData.level1_bugs.forEach((bug, i) => {
+            const input = document.getElementById(`bug_${i}`).value.toLowerCase().trim();
+            if (input !== bug.answer) { allCorrect = false; errors.push(`Bug ${i+1}`); }
+        });
+
+        // Check Morphology
+        dailyData.level1_root.words.forEach((word, i) => {
+            const input = document.getElementById(`morph_${i}`).value.toLowerCase().trim();
+            if (input !== word.answer) { allCorrect = false; errors.push(`Morphology ${i+1}`); }
+        });
+
+        const fb = document.getElementById('fb1');
+        fb.classList.remove('hidden');
+
+        if (allCorrect) {
+            fb.style.borderColor = "var(--text)";
+            fb.innerHTML = "SYSTEM LOGIC REPAIRED. Firewall access granted to Level 2.";
+            document.getElementById('level2').classList.remove('hidden');
+            document.getElementById('level1').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            fb.style.borderColor = "var(--error)";
+            fb.innerHTML = `CORRUPTION DETECTED. Check your spelling on: ${errors.join(', ')}`;
+        }
+    }
+
+    // --- AI EVALUATION HELPERS ---
+    async function callGemini(promptText) {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        if (!apiKey) throw new Error("API Key missing. Enter Gemini API Key at the top.");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+        const payload = { contents: [{ parts: [{ text: promptText }] }] };
+
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error.message);
+        return data.candidates[0].content.parts[0].text;
+    }
+
+    function extractScore(aiText) {
+        const match = aiText.match(/SCORE:\s*(\d+)\/10/i);
+        return match ? parseInt(match[1]) : 0;
+    }
+
+    // --- LEVEL 2 AI VALIDATION ---
+    async function gradeLevel2() {
+        const upg = document.getElementById('l2_upgrade').value.trim();
+        const s1 = document.getElementById('l2_s1').value.trim();
+        const s2 = document.getElementById('l2_s2').value.trim();
+        const s3 = document.getElementById('l2_s3').value.trim();
+        
+        const fb = document.getElementById('fb2');
+        const btn = document.getElementById('submitL2');
+        fb.classList.remove('hidden');
+
+        if (!upg || !s1 || !s2 || !s3) {
+            fb.style.borderColor = "var(--error)";
+            fb.innerHTML = "ERROR: All data fields must be populated.";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Analysing Logic...";
+        fb.style.borderColor = "var(--warn)";
+        fb.innerHTML = "Sending data to AI Mainframe for evaluation...";
+
+        const prompt = `You are a strict but encouraging English teacher in Sydney, Australia evaluating a Year 8 student's work.
+        Ensure you use British/Australian English spelling (e.g., analyse, organise) in your feedback.
+        
+        Task 2.1 Original Weak Sentence: "${dailyData.level2_weak_sentence}"
+        Student's Upgraded Sentence: "${upg}"
+        
+        Task 2.2 Excerpt: "${dailyData.level2_excerpt}"
+        Student's 3-Sentence Analysis:
+        1. "${s1}"
+        2. "${s2}"
+        3. "${s3}"
+
+        EVALUATION CRITERIA:
+        - Task 2.1: Did they avoid basic verbs ("shows", "uses") and elevate the vocabulary?
+        - Task 2.2: Are the inputs properly formed sentences? Do they flow cohesively to form a single, well-connected analytical point? Does it integrate a short quote?
+        - Spelling & Grammar: Explicitly point out any Australian/British English spelling mistakes.
+        
+        Provide constructive feedback, addressing the student as "Analyst". 
+        At the very end of your response, you MUST provide an overall score out of 10 in this exact format: "SCORE: X/10".
+        (Pass mark is 7/10).`;
+
+        try {
+            const feedbackText = await callGemini(prompt);
+            const score = extractScore(feedbackText);
+            finalScores.level2 = score;
+
+            fb.innerHTML = `<strong>>> EVALUATION COMPLETE:</strong><br><br>` + feedbackText.replace(/\n/g, '<br>');
+
+            if (score >= 7) {
+                fb.style.borderColor = "var(--text)";
+                document.getElementById('level3').classList.remove('hidden');
+                document.getElementById('level2').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                fb.style.borderColor = "var(--error)";
+                fb.innerHTML += `<br><br><span style="color:var(--error);">>> ACCESS DENIED. Score ${score}/10 is below the 7/10 threshold. Review feedback and modify code.</span>`;
+            }
+        } catch (error) {
+            fb.style.borderColor = "var(--error)";
+            fb.innerHTML = `<strong>API ERROR:</strong> ${error.message}`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Run AI Logic Check";
+        }
+    }
+
+    // --- LEVEL 3 AI VALIDATION & LOGGING ---
+    async function gradeLevel3() {
+        const responseText = document.getElementById('l3_response').value.trim();
+        const fb = document.getElementById('fb3');
+        const btn = document.getElementById('submitL3');
+        fb.classList.remove('hidden');
+
+        if (responseText.length < 50) {
+            fb.style.borderColor = "var(--error)";
+            fb.innerHTML = "ERROR: Argument insufficient length. Expand your reasoning.";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Analysing Protocol Override...";
+        fb.style.borderColor = "var(--warn)";
+        fb.innerHTML = "Processing final evaluation...";
+
+        const prompt = `You are a strict but encouraging English teacher in Sydney, Australia evaluating a Year 8 student's work.
+        Ensure you use British/Australian English spelling in your feedback.
+        
+        Prompt: "${dailyData.level3_prompt}"
+        Student's Paragraph Argument: "${responseText}"
+
+        EVALUATION CRITERIA:
+        - Does it consist of properly formed, cohesive sentences?
+        - Clear thesis/stance without using "I think" or "I believe".
+        - Logical, mature justification.
+        - Point out any spelling mistakes (using Australian English conventions).
+
+        Provide constructive feedback, addressing the student as "Analyst".
+        At the very end of your response, you MUST provide an overall score out of 10 in this exact format: "SCORE: X/10".
+        (Pass mark is 7/10).`;
+
+        try {
+            const feedbackText = await callGemini(prompt);
+            const score = extractScore(feedbackText);
+            finalScores.level3 = score;
+
+            fb.innerHTML = `<strong>>> OVERRIDE EVALUATION COMPLETE:</strong><br><br>` + feedbackText.replace(/\n/g, '<br>');
+
+            if (score >= 7) {
+                fb.style.borderColor = "var(--text)";
+                fb.innerHTML += `<br><br><strong style="color:var(--text);">>> PROTOCOL COMPLETE. Progress saved to database. Well done, Analyst.</strong>`;
+                logProgressToDatabase(); // Triggers the webhook
+            } else {
+                fb.style.borderColor = "var(--error)";
+                fb.innerHTML += `<br><br><span style="color:var(--error);">>> OVERRIDE FAILED. Score ${score}/10 is below the 7/10 threshold. Adjust your argument and try again.</span>`;
+            }
+        } catch (error) {
+            fb.style.borderColor = "var(--error)";
+            fb.innerHTML = `<strong>API ERROR:</strong> ${error.message}`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Run AI Final Evaluation";
+        }
+    }
+
+    // --- WEBHOOK PROGRESS LOGGING ---
+    function logProgressToDatabase() {
+        // In production, replace YOUR_WEB_APP_URL with the Google Apps Script Web App URL
+        const webhookUrl = 'YOUR_WEB_APP_URL';
+        
+        const payload = {
+            date: new Date().toISOString().split('T')[0],
+            level2_score: finalScores.level2,
+            level3_score: finalScores.level3,
+            level3_submission: document.getElementById('l3_response').value
+        };
+
+        // Suppressing actual fetch to prevent prototype errors, but here is the logic:
+        /*
+        fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(() => console.log("Progress logged successfully."));
+        */
+        console.log("Mock Webhook Fired. Payload:", payload);
+    }
+</script>
+
+</body>
+</html>
