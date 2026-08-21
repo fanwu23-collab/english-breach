@@ -196,13 +196,16 @@
 
     // --- INITIALIZATION ---
     window.onload = async () => {
-        // Extract the date from the URL (e.g., ?date=2026-08-21)
         const urlParams = new URLSearchParams(window.location.search);
         let dateKey = urlParams.get('date');
         
-        // If no date in URL, default to today's date in local format
+        // If no date in URL, forcefully generate today's local date (fixing the UTC offset bug)
         if (!dateKey) {
-            dateKey = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            dateKey = `${year}-${month}-${day}`;
         }
 
         try {
@@ -210,7 +213,7 @@
             dailyData = await response.json();
             
             if (Object.keys(dailyData).length === 0) {
-                document.getElementById('loading').innerHTML = ">> ERROR: No protocol found for this date. Check system logs.";
+                document.getElementById('loading').innerHTML = `>> ERROR: No protocol found for date [${dateKey}]. Check system logs.`;
                 document.getElementById('loading').style.color = "var(--error)";
                 return;
             }
