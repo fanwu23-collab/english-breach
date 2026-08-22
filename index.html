@@ -216,7 +216,7 @@
         }
     };
 
-    function setupUI(data) {
+function setupUI(data) {
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('level1').classList.remove('hidden');
 
@@ -246,6 +246,20 @@
         document.getElementById('weakSentence').innerText = data.level2_weak_sentence;
         document.getElementById('literatureExcerpt').innerText = data.level2_excerpt;
         document.getElementById('debatePrompt').innerText = data.level3_prompt;
+
+        // --- NEW: DYNAMIC MANUAL SYNC LOGIC ---
+        if (data.dynamic_manual) {
+            document.getElementById('manual-morph').innerText = data.dynamic_manual.morphology_brief;
+            document.getElementById('manual-vocab').innerText = data.dynamic_manual.vocab_upgrades;
+            document.getElementById('manual-tactics').innerText = data.dynamic_manual.tactical_advice;
+            document.getElementById('manual-morph').style.color = "#b0c4de"; // Ensure normal text color
+        } else {
+            // Fallback for legacy challenges without dynamic intel
+            document.getElementById('manual-morph').innerText = ">> DATA FRAGMENT MISSING: Legacy record. No dynamic morphology data available for this date.";
+            document.getElementById('manual-vocab').innerText = ">> SYSTEM DEFAULT: Upgrade basic words using standard high-level verbs (e.g., illustrates, underscores, emphasizes).";
+            document.getElementById('manual-tactics').innerText = ">> TACTICAL DEFAULT: Formulate a strong thesis. Do not use 'I think'.";
+            document.getElementById('manual-morph').style.color = "var(--error)";
+        }
     }
 
     // --- LEVEL 1 VALIDATION ---
